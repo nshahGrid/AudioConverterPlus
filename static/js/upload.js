@@ -3,15 +3,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('fileInput');
     const selectButton = document.getElementById('selectButton');
     const uploadForm = document.getElementById('uploadForm');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
     const convertButton = document.getElementById('convertButton');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
+    const batchProgress = document.getElementById('batchProgress');
+    const totalProgressBar = document.getElementById('totalProgressBar');
+    const currentProgressBar = document.getElementById('currentProgressBar');
+    const currentFileName = document.getElementById('currentFileName');
     const errorContainer = document.getElementById('errorContainer');
     const errorMessage = document.getElementById('errorMessage');
-    const downloadContainer = document.getElementById('downloadContainer');
-    const downloadLink = document.getElementById('downloadLink');
+    const completedFiles = document.getElementById('completedFiles');
+    const downloadLinks = document.getElementById('downloadLinks');
 
     // Handle drag and drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -52,99 +54,131 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         if (files.length > 0) {
-            const file = files[0];
-            if (file.name.toLowerCase().endsWith('.m4a')) {
-                fileInput.files = files;
-                showFileInfo(file.name);
-            } else {
-                showError('Please select a valid M4A file');
-            }
-        }
-    }
+            const validFiles = Array.from(files).filter(file => 
+                file.name.toLowerCase().endsWith('.m4a')
+            );
 
-    function showFileInfo(name) {
-        fileName.textContent = name;
-        fileInfo.classList.remove('d-none');
-        errorContainer.classList.add('d-none');
-        downloadContainer.classList.add('d-none');
+            if (validFiles.length === 0) {
+                showError('Please select valid M4A files');
+                return;
+            }
+
+            // Update UI with selected files
+            selectedFiles.innerHTML = '';
+            validFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.textContent = file.name;
+                selectedFiles.appendChild(li);
+            });
+
+            fileList.classList.remove('d-none');
+            errorContainer.classList.add('d-none');
+            completedFiles.classList.add('d-none');
+            
+            // Update file input with valid files only
+            const dt = new DataTransfer();
+            validFiles.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+        }
     }
 
     function showError(message) {
         errorMessage.textContent = message;
         errorContainer.classList.remove('d-none');
-        fileInfo.classList.add('d-none');
-        downloadContainer.classList.add('d-none');
+        fileList.classList.add('d-none');
+        completedFiles.classList.add('d-none');
     }
 
-    // Handle conversion
-    convertButton.addEventListener('click', () => {
-        const formData = new FormData(uploadForm);
+    // Handle batch conversion
+    convertButton.addEventListener('click', async () => {
+        const files = fileInput.files;
+        const bitrate = document.getElementById('bitrate').value;
         
-        progressContainer.classList.remove('d-none');
-        progressBar.style.width = '0%';
-        downloadContainer.classList.add('d-none');
-        
-        // Simulate progress while converting
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 5;
-            if (progress <= 90) {
-                progressBar.style.width = progress + '%';
-            }
-        }, 500);
+        if (files.length === 0) {
+            showError('Please select files to convert');
+            return;
+        }
 
-        // Submit form via AJAX
-        fetch(uploadForm.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        batchProgress.classList.remove('d-none');
+        downloadLinks.innerHTML = '';
+        completedFiles.classList.add('d-none');
+        
+        let completedCount = 0;
+        const totalFiles = files.length;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('bitrate', bitrate);
+
+            // Update progress indicators
+            currentFileName.textContent = file.name;
+            currentProgressBar.style.width = '0%';
+            totalProgressBar.style.width = `${(completedCount / totalFiles) * 100}%`;
+
+            try {
+                // Simulate file conversion progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    if (progress <= 90) {
+                        currentProgressBar.style.width = `${progress}%`;
+                    }
+                }, 500);
+
+                // Submit form for current file
+                const response = await fetch(uploadForm.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                clearInterval(interval);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+
+                // Update progress for completed file
+                currentProgressBar.style.width = '100%';
+                completedCount++;
+                totalProgressBar.style.width = `${(completedCount / totalFiles) * 100}%`;
+
+                // Add download link
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="${data.download_url}" class="download-link" 
+                               data-filename="${data.filename}">${file.name} → ${data.filename}</a>`;
+                downloadLinks.appendChild(li);
+                completedFiles.classList.remove('d-none');
+
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showError(`Error converting ${file.name}: ${error.message}`);
+                break;
             }
-            return response.json();
-        })
-        .then(data => {
-            clearInterval(interval);
-            progressBar.style.width = '100%';
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            // Log download URL for debugging
-            console.log('Download URL:', data.download_url);
-            
-            // Setup download link
-            downloadLink.href = data.download_url;
-            downloadLink.download = data.filename;
-            
-            // Add click handler for download link
-            downloadLink.onclick = function(e) {
-                e.preventDefault();
-                const link = document.createElement('a');
-                link.href = data.download_url;
-                link.download = data.filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-            
-            downloadContainer.classList.remove('d-none');
-            
-            // Reset form
-            fileInfo.classList.add('d-none');
+        }
+
+        // Reset form after all files are processed
+        if (completedCount === totalFiles) {
             setTimeout(() => {
-                progressContainer.classList.add('d-none');
-                progressBar.style.width = '0%';
+                batchProgress.classList.add('d-none');
+                fileList.classList.add('d-none');
                 uploadForm.reset();
             }, 1000);
-        })
-        .catch(error => {
-            console.error('Conversion error:', error);
-            clearInterval(interval);
-            progressContainer.classList.add('d-none');
-            showError(error.message || 'An error occurred during conversion');
-        });
+        }
+    });
+
+    // Handle download links
+    downloadLinks.addEventListener('click', (e) => {
+        if (e.target.classList.contains('download-link')) {
+            e.preventDefault();
+            const link = document.createElement('a');
+            link.href = e.target.href;
+            link.download = e.target.dataset.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     });
 });

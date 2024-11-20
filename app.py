@@ -20,9 +20,10 @@ app.secret_key = "your-secret-key-here"
 # Configure upload settings
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'m4a'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # Increased to 50MB for batch processing
 CLEANUP_DELAY = 600  # 10 minutes
-MAX_DOWNLOAD_SIZE = 50 * 1024 * 1024  # 50MB max download size
+MAX_DOWNLOAD_SIZE = 100 * 1024 * 1024  # Increased to 100MB for batch downloads
+MAX_BATCH_SIZE = 10  # Maximum number of files in a batch
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -180,7 +181,7 @@ def convert():
 @app.errorhandler(413)
 def too_large(e):
     logger.error(f"File too large error: {str(e)}")
-    return jsonify({'error': 'File too large. Maximum size is 16MB'}), 413
+    return jsonify({'error': 'File too large. Maximum size is 50MB'}), 413
 
 @app.errorhandler(500)
 def server_error(e):
@@ -193,4 +194,5 @@ logger.info(f"Upload folder: {UPLOAD_FOLDER}")
 logger.info(f"Max content length: {MAX_CONTENT_LENGTH} bytes")
 logger.info(f"Max download size: {MAX_DOWNLOAD_SIZE} bytes")
 logger.info(f"Cleanup delay: {CLEANUP_DELAY} seconds")
+logger.info(f"Max batch size: {MAX_BATCH_SIZE} files")
 logger.info("CORS headers enabled")
