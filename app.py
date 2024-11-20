@@ -25,11 +25,26 @@ CLEANUP_DELAY = 600  # 10 minutes
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# CORS headers
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    return response
+
+# Request logging middleware
+@app.before_request
+def log_request_info():
+    logger.info('Request Headers: %s', dict(request.headers))
+    logger.info('Request URL: %s %s', request.method, request.url)
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def index():
+    logger.info('Serving index page')
     return render_template('index.html')
 
 @app.route('/download/<filename>')
@@ -67,6 +82,9 @@ def download_file(filename):
 
 @app.route('/convert', methods=['POST'])
 def convert():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     if 'file' not in request.files:
         logger.error("No file uploaded in request")
         return jsonify({'error': 'No file uploaded'}), 400
@@ -152,3 +170,10 @@ def too_large(e):
 def server_error(e):
     logger.error(f"Server error: {str(e)}")
     return render_template('error.html'), 500
+
+# Log startup information
+logger.info("Application startup configuration:")
+logger.info(f"Upload folder: {UPLOAD_FOLDER}")
+logger.info(f"Max content length: {MAX_CONTENT_LENGTH} bytes")
+logger.info(f"Cleanup delay: {CLEANUP_DELAY} seconds")
+logger.info("CORS headers enabled")
