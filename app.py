@@ -108,6 +108,8 @@ def convert():
     
     file = request.files['file']
     bitrate = request.form.get('bitrate', '192k')  # Default to 192k if not specified
+    samplerate = request.form.get('samplerate', '48000')  # Default to 48kHz
+    channels = request.form.get('channels', '2')  # Default to stereo
     
     if file.filename == '':
         logger.error("Empty filename submitted")
@@ -128,15 +130,18 @@ def convert():
         logger.info(f"Saving uploaded file: {input_filename}")
         file.save(input_path)
 
-        # Convert using ffmpeg with specified bitrate and improved quality settings
+        # Convert using ffmpeg with specified quality settings
         try:
-            logger.info(f"Starting conversion: {input_filename} to MP3 at {bitrate}")
+            logger.info(f"Starting conversion: {input_filename} to MP3 with bitrate: {bitrate}, sample rate: {samplerate}Hz, channels: {channels}")
             subprocess.run([
                 'ffmpeg', '-i', input_path,
-                '-b:a', bitrate,
-                '-q:a', '0',  # Use variable bit rate with highest quality
-                '-map_metadata', '0',  # Copy metadata from input
-                '-id3v2_version', '3',  # Use ID3v2.3 tags for better compatibility
+                '-ar', str(samplerate),  # Set sample rate
+                '-ac', str(channels),    # Set number of channels
+                '-b:a', bitrate,         # Set bitrate
+                '-q:a', '0',            # Use variable bit rate with highest quality
+                '-map_metadata', '0',    # Copy metadata from input
+                '-id3v2_version', '3',   # Use ID3v2.3 tags for better compatibility
+                '-af', f'volume=1.0',    # Normalize volume
                 output_path
             ], check=True, capture_output=True)
             logger.info("Conversion completed successfully")

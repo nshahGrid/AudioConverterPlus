@@ -16,11 +16,28 @@
                             <input type="file" class="form-control" id="fileInput" name="files[]" accept=".m4a,.wav,.aac,.wma,.ogg,.flac" multiple hidden>
                             
                             <div class="mb-3">
-                                <label for="bitrate" class="form-label">Select Output Quality (Bitrate)</label>
+                                <label for="bitrate" class="form-label" data-bs-toggle="tooltip" title="Higher bitrate means better audio quality but larger file size">Bitrate Quality</label>
                                 <select class="form-select" id="bitrate" name="bitrate">
                                     <option value="128k">128 kbps (Good - Smaller file size)</option>
                                     <option value="192k" selected>192 kbps (Better - Balanced)</option>
                                     <option value="320k">320 kbps (Best - Larger file size)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="samplerate" class="form-label" data-bs-toggle="tooltip" title="Higher sample rate captures more audio detail">Sample Rate</label>
+                                <select class="form-select" id="samplerate" name="samplerate">
+                                    <option value="44100">44.1 kHz (CD Quality)</option>
+                                    <option value="48000" selected>48 kHz (Studio Quality)</option>
+                                    <option value="96000">96 kHz (High Resolution)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="channels" class="form-label" data-bs-toggle="tooltip" title="Mono for voice, Stereo for music">Audio Channels</label>
+                                <select class="form-select" id="channels" name="channels">
+                                    <option value="1">Mono (Single Channel)</option>
+                                    <option value="2" selected>Stereo (Two Channels)</option>
                                 </select>
                             </div>
                             

@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const completedFiles = document.getElementById('completedFiles');
     const downloadLinks = document.getElementById('downloadLinks');
 
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
     // Handle drag and drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false);
@@ -94,6 +100,8 @@ document.addEventListener('DOMContentLoaded', function() {
     convertButton.addEventListener('click', async () => {
         const files = fileInput.files;
         const bitrate = document.getElementById('bitrate').value;
+        const samplerate = document.getElementById('samplerate').value;
+        const channels = document.getElementById('channels').value;
         
         if (files.length === 0) {
             showError('Please select files to convert');
@@ -112,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('bitrate', bitrate);
+            formData.append('samplerate', samplerate);
+            formData.append('channels', channels);
 
             // Update progress indicators
             currentFileName.textContent = file.name;
