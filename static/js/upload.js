@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = document.getElementById('progressBar');
     const errorContainer = document.getElementById('errorContainer');
     const errorMessage = document.getElementById('errorMessage');
+    const downloadContainer = document.getElementById('downloadContainer');
+    const downloadLink = document.getElementById('downloadLink');
 
     // Handle drag and drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -64,12 +66,14 @@ document.addEventListener('DOMContentLoaded', function() {
         fileName.textContent = name;
         fileInfo.classList.remove('d-none');
         errorContainer.classList.add('d-none');
+        downloadContainer.classList.add('d-none');
     }
 
     function showError(message) {
         errorMessage.textContent = message;
         errorContainer.classList.remove('d-none');
         fileInfo.classList.add('d-none');
+        downloadContainer.classList.add('d-none');
     }
 
     // Handle conversion
@@ -78,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         progressContainer.classList.remove('d-none');
         progressBar.style.width = '0%';
+        downloadContainer.classList.add('d-none');
         
         // Simulate progress while converting
         let progress = 0;
@@ -88,19 +93,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
 
-        // Submit form
-        uploadForm.submit();
-        
-        // Reset form after submission
-        setTimeout(() => {
+        // Submit form via AJAX
+        fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
             clearInterval(interval);
             progressBar.style.width = '100%';
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Show download link
+            downloadLink.href = data.download_url;
+            downloadLink.download = data.filename;
+            downloadContainer.classList.remove('d-none');
+            
+            // Reset form
+            fileInfo.classList.add('d-none');
             setTimeout(() => {
                 progressContainer.classList.add('d-none');
-                fileInfo.classList.add('d-none');
                 progressBar.style.width = '0%';
                 uploadForm.reset();
             }, 1000);
-        }, 5000);
+        })
+        .catch(error => {
+            clearInterval(interval);
+            progressContainer.classList.add('d-none');
+            showError(error.message || 'An error occurred during conversion');
+        });
     });
 });
