@@ -1,0 +1,29 @@
+.upload-container {
+    border: 2px dashed var(--bs-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.upload-container:hover {
+    border-color: var(--bs-primary);
+}
+
+.upload-container.dragover {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+#progressContainer {
+    margin-top: 1rem;
+}
+
+.progress {
+    height: 20px;
+}
+
+.bi {
+    opacity: 0.8;
+}
