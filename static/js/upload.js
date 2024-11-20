@@ -98,7 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             clearInterval(interval);
             progressBar.style.width = '100%';
@@ -107,9 +112,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error);
             }
             
-            // Show download link
+            // Log download URL for debugging
+            console.log('Download URL:', data.download_url);
+            
+            // Setup download link with target="_blank"
             downloadLink.href = data.download_url;
+            downloadLink.setAttribute('target', '_blank');
             downloadLink.download = data.filename;
+            
+            // Add click handler for download link
+            downloadLink.onclick = function(e) {
+                e.preventDefault();
+                try {
+                    console.log('Initiating download for:', data.filename);
+                    window.open(data.download_url, '_blank');
+                } catch (err) {
+                    console.error('Download error:', err);
+                    showError('Error initiating download. Please try again.');
+                }
+            };
+            
             downloadContainer.classList.remove('d-none');
             
             // Reset form
@@ -121,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1000);
         })
         .catch(error => {
+            console.error('Conversion error:', error);
             clearInterval(interval);
             progressContainer.classList.add('d-none');
             showError(error.message || 'An error occurred during conversion');
