@@ -5,21 +5,22 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
-                <h2 class="card-title text-center mb-4">Convert M4A to MP3</h2>
+                <h2 class="card-title text-center mb-4">Audio to MP3 Converter</h2>
                 
                 <div class="upload-container" id="dropZone">
                     <form id="uploadForm" action="{{ url_for('convert') }}" method="post" enctype="multipart/form-data">
                         <div class="text-center">
                             <i class="bi bi-cloud-upload display-1"></i>
-                            <p class="mt-3">Drag and drop your M4A files here<br>or click to select</p>
-                            <input type="file" class="form-control" id="fileInput" name="files[]" accept=".m4a" multiple hidden>
+                            <p class="mt-3">Drag and drop your audio files here<br>or click to select</p>
+                            <p class="text-muted small">Supported formats: M4A, WAV, AAC, WMA, OGG, FLAC</p>
+                            <input type="file" class="form-control" id="fileInput" name="files[]" accept=".m4a,.wav,.aac,.wma,.ogg,.flac" multiple hidden>
                             
                             <div class="mb-3">
-                                <label for="bitrate" class="form-label">Select Quality (Bitrate)</label>
+                                <label for="bitrate" class="form-label">Select Output Quality (Bitrate)</label>
                                 <select class="form-select" id="bitrate" name="bitrate">
-                                    <option value="128k">128 kbps (Good)</option>
-                                    <option value="192k" selected>192 kbps (Better)</option>
-                                    <option value="320k">320 kbps (Best)</option>
+                                    <option value="128k">128 kbps (Good - Smaller file size)</option>
+                                    <option value="192k" selected>192 kbps (Better - Balanced)</option>
+                                    <option value="320k">320 kbps (Best - Larger file size)</option>
                                 </select>
                             </div>
                             

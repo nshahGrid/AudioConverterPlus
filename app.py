@@ -19,10 +19,10 @@ app.secret_key = "your-secret-key-here"
 
 # Configure upload settings
 UPLOAD_FOLDER = '/tmp'
-ALLOWED_EXTENSIONS = {'m4a'}
-MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # Increased to 50MB for batch processing
+ALLOWED_EXTENSIONS = {'m4a', 'wav', 'aac', 'wma', 'ogg', 'flac'}
+MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB for batch processing
 CLEANUP_DELAY = 600  # 10 minutes
-MAX_DOWNLOAD_SIZE = 100 * 1024 * 1024  # Increased to 100MB for batch downloads
+MAX_DOWNLOAD_SIZE = 100 * 1024 * 1024  # 100MB for batch downloads
 MAX_BATCH_SIZE = 10  # Maximum number of files in a batch
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -115,7 +115,7 @@ def convert():
     
     if not allowed_file(file.filename):
         logger.error(f"Invalid file format: {file.filename}")
-        return jsonify({'error': 'Invalid file format. Only M4A files are allowed'}), 400
+        return jsonify({'error': f'Invalid file format. Allowed formats: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
 
     try:
         # Generate unique filename
@@ -128,12 +128,15 @@ def convert():
         logger.info(f"Saving uploaded file: {input_filename}")
         file.save(input_path)
 
-        # Convert using ffmpeg with specified bitrate
+        # Convert using ffmpeg with specified bitrate and improved quality settings
         try:
             logger.info(f"Starting conversion: {input_filename} to MP3 at {bitrate}")
             subprocess.run([
                 'ffmpeg', '-i', input_path,
                 '-b:a', bitrate,
+                '-q:a', '0',  # Use variable bit rate with highest quality
+                '-map_metadata', '0',  # Copy metadata from input
+                '-id3v2_version', '3',  # Use ID3v2.3 tags for better compatibility
                 output_path
             ], check=True, capture_output=True)
             logger.info("Conversion completed successfully")
@@ -195,4 +198,5 @@ logger.info(f"Max content length: {MAX_CONTENT_LENGTH} bytes")
 logger.info(f"Max download size: {MAX_DOWNLOAD_SIZE} bytes")
 logger.info(f"Cleanup delay: {CLEANUP_DELAY} seconds")
 logger.info(f"Max batch size: {MAX_BATCH_SIZE} files")
+logger.info(f"Allowed extensions: {ALLOWED_EXTENSIONS}")
 logger.info("CORS headers enabled")
