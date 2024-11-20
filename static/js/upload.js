@@ -115,21 +115,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Log download URL for debugging
             console.log('Download URL:', data.download_url);
             
-            // Setup download link with target="_blank"
+            // Setup download link
             downloadLink.href = data.download_url;
-            downloadLink.setAttribute('target', '_blank');
             downloadLink.download = data.filename;
             
             // Add click handler for download link
             downloadLink.onclick = function(e) {
                 e.preventDefault();
-                try {
-                    console.log('Initiating download for:', data.filename);
-                    window.open(data.download_url, '_blank');
-                } catch (err) {
-                    console.error('Download error:', err);
-                    showError('Error initiating download. Please try again.');
-                }
+                const link = document.createElement('a');
+                link.href = data.download_url;
+                link.download = data.filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
             
             downloadContainer.classList.remove('d-none');

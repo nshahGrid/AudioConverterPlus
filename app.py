@@ -47,11 +47,20 @@ def download_file(filename):
             return jsonify({'error': 'Invalid file request'}), 400
             
         logger.info(f"Sending file: {filename}")
-        return send_file(
+        
+        response = send_file(
             file_path,
+            mimetype='audio/mpeg',
             as_attachment=True,
             download_name=filename.split('_', 1)[1]  # Remove UUID prefix
         )
+        
+        # Add Cache-Control and Content-Disposition headers
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename.split("_", 1)[1]}"'
+        
+        return response
+        
     except Exception as e:
         logger.error(f"Error downloading file {filename}: {str(e)}")
         return jsonify({'error': 'Error processing download request'}), 500
