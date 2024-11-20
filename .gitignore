@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+.pythonlibs/
+
+# Replit specific
+.config/
+.upm/
+.replit
+replit.nix
+.cache/
+.breakpoints
+poetry.lock
+.pytest_cache/
+*.nix
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+/tmp/*
+*.log
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build and dist
+build/
+dist/
+*.egg-info/
