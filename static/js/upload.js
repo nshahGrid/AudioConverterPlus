@@ -54,12 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         if (files.length > 0) {
-            const validFiles = Array.from(files).filter(file => 
-                file.name.toLowerCase().endsWith('.m4a')
-            );
+            const validFiles = Array.from(files).filter(file => {
+                const extension = file.name.split('.').pop().toLowerCase();
+                return ['m4a', 'wav', 'aac', 'wma', 'ogg', 'flac'].includes(extension);
+            });
 
             if (validFiles.length === 0) {
-                showError('Please select valid M4A files');
+                showError('Please select valid audio files (M4A, WAV, AAC, WMA, OGG, FLAC)');
                 return;
             }
 
