@@ -22,6 +22,7 @@ UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'m4a'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 CLEANUP_DELAY = 600  # 10 minutes
+MAX_DOWNLOAD_SIZE = 50 * 1024 * 1024  # 50MB max download size
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -31,6 +32,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length')
     return response
 
 # Request logging middleware
@@ -53,15 +55,23 @@ def download_file(filename):
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         logger.info(f"Attempting to download file: {filename}")
         
+        # Validate file existence
         if not os.path.exists(file_path):
             logger.error(f"File not found: {filename}")
             return jsonify({'error': 'File not found or expired'}), 404
+        
+        # Validate file size
+        file_size = os.path.getsize(file_path)
+        if file_size > MAX_DOWNLOAD_SIZE:
+            logger.error(f"File size exceeds limit: {filename} ({file_size} bytes)")
+            return jsonify({'error': 'File size exceeds maximum limit'}), 413
             
+        # Validate filename format (UUID prefix)
         if not filename.startswith(tuple(str(uuid.UUID(x)) for x in [filename.split('_')[0]])):
             logger.error(f"Invalid filename format: {filename}")
             return jsonify({'error': 'Invalid file request'}), 400
             
-        logger.info(f"Sending file: {filename}")
+        logger.info(f"Sending file: {filename} (size: {file_size} bytes)")
         
         response = send_file(
             file_path,
@@ -70,9 +80,15 @@ def download_file(filename):
             download_name=filename.split('_', 1)[1]  # Remove UUID prefix
         )
         
-        # Add Cache-Control and Content-Disposition headers
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Content-Disposition'] = f'attachment; filename="{filename.split("_", 1)[1]}"'
+        # Add required headers
+        response.headers.update({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': str(file_size),
+            'Content-Disposition': f'attachment; filename="{filename.split("_", 1)[1]}"',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        })
         
         return response
         
@@ -147,8 +163,8 @@ def convert():
         Thread(target=cleanup_file, daemon=True).start()
         logger.info(f"Scheduled cleanup for: {output_filename} in {CLEANUP_DELAY} seconds")
 
-        # Return download URL with absolute path
-        download_url = url_for('download_file', filename=output_filename, _external=True)
+        # Return download URL with HTTPS scheme
+        download_url = url_for('download_file', filename=output_filename, _external=True, _scheme='https')
         logger.info(f"Generated download URL: {download_url}")
         
         return jsonify({
@@ -175,5 +191,6 @@ def server_error(e):
 logger.info("Application startup configuration:")
 logger.info(f"Upload folder: {UPLOAD_FOLDER}")
 logger.info(f"Max content length: {MAX_CONTENT_LENGTH} bytes")
+logger.info(f"Max download size: {MAX_DOWNLOAD_SIZE} bytes")
 logger.info(f"Cleanup delay: {CLEANUP_DELAY} seconds")
 logger.info("CORS headers enabled")
